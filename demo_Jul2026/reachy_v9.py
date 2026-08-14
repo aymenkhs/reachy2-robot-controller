@@ -22,6 +22,7 @@ from sklearn.pipeline import FeatureUnion
 import time
 import numpy as np
 from reachy2_sdk import ReachySDK
+from config import ARM_MOVE_DURATION_SECONDS
 from robot.connection import connect_reachy
 from robot.motion import (
     speaking_motion,
@@ -29,7 +30,7 @@ from robot.motion import (
     mic_forward,
     mic_backward,
     gesture_67,
-    fun_pose_liberty,
+    FUN_PICTURE_POSES,
 )
 
 
@@ -184,8 +185,10 @@ FUN_POSE_TOOL = {
     "type": "function",
     "name": "perform_fun_pose",
     "description": (
-        "Pose for the audiance to take a picture. Always call this when the visitor "
-        "says I want a picture, selfie, pose for me, or ask reachy to pose."
+        "Pose for the audience to take a picture. Reachy picks one of "
+        "the available fun poses at random. Always call "
+        "this when the visitor says I want a picture, selfie, pose for me, "
+        "cheese, or asks Reachy to pose."
     ),
     "parameters": {
         "type": "object",
@@ -972,56 +975,29 @@ def run_67_show() -> dict[str, Any]:
 
 
 def perform_fun_pose() -> dict[str, Any]:
-    """"""
-    sound_path = resolve_local_media_path(ACTION_67_SOUND_PATH)
-
-    # if not sound_path.is_file():
-    #     return {
-    #         "error": f"67 sound was not found: {sound_path}",
-    #     }
-
+    """Pick a random fun picture pose and hold it for a photo."""
     try:
-        # decoded = miniaudio.decode_file(
-        #     str(sound_path.resolve()),
-        #     output_format=miniaudio.SampleFormat.SIGNED16,
-        # )
-        # audio_samples = np.frombuffer(
-        #     decoded.samples,
-        #     dtype=np.int16,
-        # ).reshape(-1, decoded.nchannels)
-        # audio_samples = (
-        #     audio_samples.astype(np.float32)
-        #     / 32768.0
-        #     * ACTION_67_SOUND_VOLUME
-        # )
-        # sound_seconds = decoded.num_frames / decoded.sample_rate
+        pose_name, pose_fn = random.choice(FUN_PICTURE_POSES)
 
-        # print(
-        #     f'\nPlaying 67 action sound for {sound_seconds:.2f} seconds.'
-        # )
-        # sd.play(audio_samples, samplerate=decoded.sample_rate)
+        print(f"\nSelected fun picture pose: {pose_name}.")
 
         if reachy is None:
-            time.sleep(sound_seconds)
+            time.sleep(ARM_MOVE_DURATION_SECONDS)
         else:
-            fun_pose_liberty(
-                reachy,
-            )
+            pose_fn(reachy)
 
         return {
             "status": "completed",
             "instruction": (
-                "The pose was completed. Sheerfully ask them to take a picture"
-                # "acknowledgement and do not call the dance tool again."
+                f"Reachy finished the picture pose. "
+                "Cheerfully ask them to take a picture."
             ),
         }
 
     except Exception as exc:
         return {
-            "error": f"67 action failed: {type(exc).__name__}: {exc}",
+            "error": f"Fun pose failed: {type(exc).__name__}: {exc}",
         }
-    finally:
-        sd.stop()
 
 
 # =========================================================

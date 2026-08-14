@@ -21,6 +21,10 @@ from robot.poses import (
     LEFT_67_POSE_2,
     RIGHT_PICTURE_LBERTY_POSE,
     LEFT_PICTURE_LBERTY_POSE,
+    LEFT_PICTURE_DAB_POSE,
+    RIGHT_PICTURE_DAB_POSE,
+    LEFT_PICTURE_YAHOO_POSE,
+    RIGHT_PICTURE_YAHOO_POSE,
 )
 
 
@@ -121,29 +125,66 @@ def gesture_67(reachy, step_duration=None, total_seconds=None):
     print("67 gesture complete.")
 
 
-def fun_pose_liberty(reachy, step_duration=None, total_seconds=None):
-    """Perform the crossed, synchronized fun pose - Liberty."""
+def _fun_picture_pose(reachy, left_pose, right_pose, label):
+    """Move both arms into one synchronized fun-picture pose."""
     if reachy is None:
-        print("Skipping pose gesture: Reachy not connected.")
+        print(f"Skipping {label} pose: Reachy not connected.")
         return
 
     if reachy.l_arm is None or reachy.r_arm is None:
-        print("Skipping pose gesture: both arms are required.")
+        print(f"Skipping {label} pose: both arms are required.")
         return
 
-    print("\nStarting synchronized pose gesture.")
+    print(f"\nStarting synchronized fun picture pose: {label}.")
 
     try:
         move_both_arms(
             reachy,
-            left_pose=LEFT_PICTURE_LBERTY_POSE,
-            right_pose=RIGHT_PICTURE_LBERTY_POSE,
+            left_pose=left_pose,
+            right_pose=right_pose,
             duration=None,
         )
     except Exception as e:
         print(e)
-    
-    print("Pose completed")
+
+    print(f"{label} pose completed.")
+
+
+def fun_pose_liberty(reachy, step_duration=None, total_seconds=None):
+    """Perform the Statue of Liberty fun picture pose (fnps1)."""
+    _fun_picture_pose(
+        reachy,
+        LEFT_PICTURE_LBERTY_POSE,
+        RIGHT_PICTURE_LBERTY_POSE,
+        "liberty",
+    )
+
+
+def fun_pose_dab(reachy, step_duration=None, total_seconds=None):
+    """Perform the dab fun picture pose (fnps2)."""
+    _fun_picture_pose(
+        reachy,
+        LEFT_PICTURE_DAB_POSE,
+        RIGHT_PICTURE_DAB_POSE,
+        "dab",
+    )
+
+
+def fun_pose_yahoo(reachy, step_duration=None, total_seconds=None):
+    """Perform the yahoo fun picture pose (fnps3)."""
+    _fun_picture_pose(
+        reachy,
+        LEFT_PICTURE_YAHOO_POSE,
+        RIGHT_PICTURE_YAHOO_POSE,
+        "yahoo",
+    )
+
+
+FUN_PICTURE_POSES = (
+    ("liberty", fun_pose_liberty),
+    ("dab", fun_pose_dab),
+    ("yahoo", fun_pose_yahoo),
+)
 
 def open_gripper(arm):
     if arm.gripper is None:
@@ -472,8 +513,3 @@ def mic_backward(reachy, label="bkwd"):
         return
 
     move_4x4(arm, REACHYMIC_POSE, duration=4.0)
-
-def picture_pose_liberty(reachy, label="fnps1"):
-    if reachy is None:
-        print(f"Skipping {label}: Reachy not connected.")
-        return
