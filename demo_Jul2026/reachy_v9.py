@@ -29,6 +29,7 @@ from robot.motion import (
     mic_forward,
     mic_backward,
     gesture_67,
+    fun_pose_liberty,
 )
 
 
@@ -171,6 +172,20 @@ DANCE_67_TOOL = {
     "description": (
         "Perform Reachy's 67 meme dance. Always call this when the visitor "
         "says 67, six seven, 6 7, meme, or asks Reachy to dance."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
+FUN_POSE_TOOL = {
+    "type": "function",
+    "name": "perform_fun_pose",
+    "description": (
+        "Pose for the audiance to take a picture. Always call this when the visitor "
+        "says I want a picture, selfie, pose for me, or ask reachy to pose."
     ),
     "parameters": {
         "type": "object",
@@ -956,6 +971,59 @@ def run_67_show() -> dict[str, Any]:
         sd.stop()
 
 
+def perform_fun_pose() -> dict[str, Any]:
+    """"""
+    sound_path = resolve_local_media_path(ACTION_67_SOUND_PATH)
+
+    # if not sound_path.is_file():
+    #     return {
+    #         "error": f"67 sound was not found: {sound_path}",
+    #     }
+
+    try:
+        # decoded = miniaudio.decode_file(
+        #     str(sound_path.resolve()),
+        #     output_format=miniaudio.SampleFormat.SIGNED16,
+        # )
+        # audio_samples = np.frombuffer(
+        #     decoded.samples,
+        #     dtype=np.int16,
+        # ).reshape(-1, decoded.nchannels)
+        # audio_samples = (
+        #     audio_samples.astype(np.float32)
+        #     / 32768.0
+        #     * ACTION_67_SOUND_VOLUME
+        # )
+        # sound_seconds = decoded.num_frames / decoded.sample_rate
+
+        # print(
+        #     f'\nPlaying 67 action sound for {sound_seconds:.2f} seconds.'
+        # )
+        # sd.play(audio_samples, samplerate=decoded.sample_rate)
+
+        if reachy is None:
+            time.sleep(sound_seconds)
+        else:
+            fun_pose_liberty(
+                reachy,
+            )
+
+        return {
+            "status": "completed",
+            "instruction": (
+                "The pose was completed. Sheerfully ask them to take a picture"
+                # "acknowledgement and do not call the dance tool again."
+            ),
+        }
+
+    except Exception as exc:
+        return {
+            "error": f"67 action failed: {type(exc).__name__}: {exc}",
+        }
+    finally:
+        sd.stop()
+
+
 # =========================================================
 # Extract cited sources from a Responses API result
 # =========================================================
@@ -1199,6 +1267,9 @@ async def run_tool(
     if tool_name == "perform_67_dance":
         return await asyncio.to_thread(run_67_show)
 
+    if tool_name == "perform_fun_pose":
+        return await asyncio.to_thread(perform_fun_pose)
+
     return {
         "error": f"Unknown tool: {tool_name}"
     }
@@ -1390,6 +1461,12 @@ async def main() -> None:
                     "calling it. After the tool finishes, give only a "
                     "very short cheerful acknowledgement.\n\n"
 
+                    "HIGHEST-PRIORITY Fun poses for pictures: If the visitor says "
+                    "I want a picture, selfie, pose for me, cheese or ask reachy to pose in general."
+                    "call perform_fun_pose immediately. Do not speak before "
+                    "calling it. After the tool finishes, give a quick headsup that they can take the picture"
+                    "\n\n"
+
                     "HIGHEST-PRIORITY TREAT RULE: If the visitor mentions "
                     "food, eating, hunger, being hungry, being starving, "
                     "snacks, treats, chocolate, sweets, candy, dessert, "
@@ -1452,6 +1529,7 @@ async def main() -> None:
                 "tools": [
                     DEAKIN_LOOKUP_TOOL,
                     DANCE_67_TOOL,
+                    FUN_POSE_TOOL,
                 ],
                 "tool_choice": "auto",
             }
