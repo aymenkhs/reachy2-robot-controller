@@ -30,6 +30,7 @@ from robot.motion import (
     mic_forward,
     mic_backward,
     gesture_67,
+    gesture_floss,
     FUN_PICTURE_POSES,
 )
 
@@ -90,6 +91,7 @@ LOOKUP_MUSIC_VOLUME: Final = 0.30
 ACTION_67_SOUND_PATH: Final = "67-sound.mp3"
 ACTION_67_SOUND_VOLUME: Final = 0.70
 ACTION_67_STEP_SECONDS: Final = 1.0
+ACTION_FLOSS_STEP_SECONDS: Final = 0.8
 
 SAMPLE_RATE: Final = 24_000
 CHANNELS: Final = 1
@@ -171,8 +173,24 @@ DANCE_67_TOOL = {
     "type": "function",
     "name": "perform_67_dance",
     "description": (
-        "Perform Reachy's 67 meme dance. Always call this when the visitor "
-        "says 67, six seven, 6 7, meme, or asks Reachy to dance."
+        "Perform Reachy's 67 meme dance with synchronized arm poses and "
+        "music. Call this when the visitor says 67, six seven, 6 7, meme, "
+        "or asks for the 67 dance."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
+DANCE_FLOSS_TOOL = {
+    "type": "function",
+    "name": "perform_floss_dance",
+    "description": (
+        "Perform Reachy's floss dance with synchronized dual-arm poses. "
+        "Call this when the visitor says floss, do the floss, teach me the "
+        "floss, or asks for the floss dance."
     ),
     "parameters": {
         "type": "object",
@@ -974,6 +992,39 @@ def run_67_show() -> dict[str, Any]:
         sd.stop()
 
 
+def run_floss_show() -> dict[str, Any]:
+    """Run the floss dance for two full 1-2-1-3-4 cycles."""
+    # Ten steps per show: (1, 2, 1, 3, 4) repeated twice.
+    total_seconds = 10 * ACTION_FLOSS_STEP_SECONDS
+
+    try:
+        print(
+            f"\nStarting floss dance for {total_seconds:.2f} seconds."
+        )
+
+        if reachy is None:
+            time.sleep(total_seconds)
+        else:
+            gesture_floss(
+                reachy,
+                step_duration=ACTION_FLOSS_STEP_SECONDS,
+                total_seconds=total_seconds,
+            )
+
+        return {
+            "status": "completed",
+            "instruction": (
+                "The floss dance finished. Give one very short cheerful "
+                "acknowledgement and do not call the dance tool again."
+            ),
+        }
+
+    except Exception as exc:
+        return {
+            "error": f"Floss dance failed: {type(exc).__name__}: {exc}",
+        }
+
+
 def perform_fun_pose() -> dict[str, Any]:
     """Pick a random fun picture pose and hold it for a photo."""
     try:
@@ -1243,6 +1294,9 @@ async def run_tool(
     if tool_name == "perform_67_dance":
         return await asyncio.to_thread(run_67_show)
 
+    if tool_name == "perform_floss_dance":
+        return await asyncio.to_thread(run_floss_show)
+
     if tool_name == "perform_fun_pose":
         return await asyncio.to_thread(perform_fun_pose)
 
@@ -1431,11 +1485,21 @@ async def main() -> None:
                     "one sentence. Use two sentences when necessary and "
                     "never exceed three sentences.\n\n"
 
-                    "HIGHEST-PRIORITY 67 DANCE RULE: If the visitor says "
-                    "67, six seven, 6 7, meme, or asks you to dance, call "
-                    "perform_67_dance immediately. Do not speak before "
-                    "calling it. After the tool finishes, give only a "
-                    "very short cheerful acknowledgement.\n\n"
+                    "HIGHEST-PRIORITY DANCE RULES: Reachy knows two dances "
+                    "right now, and a third dance will be added later.\n"
+                    "- 67 meme dance: if the visitor says 67, six seven, "
+                    "6 7, meme, or asks for the 67 dance, call "
+                    "perform_67_dance immediately.\n"
+                    "- Floss dance: if the visitor says floss, do the floss, "
+                    "teach me the floss, or asks for the floss dance, call "
+                    "perform_floss_dance immediately.\n"
+                    "- Generic dance request: if the visitor asks you to "
+                    "dance without naming a dance, cheerfully ask whether "
+                    "they want the 67 dance or the floss dance, then call "
+                    "the matching tool.\n"
+                    "For any dance tool, do not speak before calling it. "
+                    "After the tool finishes, give only a very short "
+                    "cheerful acknowledgement.\n\n"
 
                     "HIGHEST-PRIORITY Fun poses for pictures: If the visitor says "
                     "I want a picture, selfie, pose for me, cheese or ask reachy to pose in general."
@@ -1505,6 +1569,7 @@ async def main() -> None:
                 "tools": [
                     DEAKIN_LOOKUP_TOOL,
                     DANCE_67_TOOL,
+                    DANCE_FLOSS_TOOL,
                     FUN_POSE_TOOL,
                 ],
                 "tool_choice": "auto",

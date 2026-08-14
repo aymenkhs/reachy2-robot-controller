@@ -19,6 +19,14 @@ from robot.poses import (
     RIGHT_67_POSE_2,
     LEFT_67_POSE_1,
     LEFT_67_POSE_2,
+    RIGHT_FLOSS_POSE_1,
+    RIGHT_FLOSS_POSE_2,
+    RIGHT_FLOSS_POSE_3,
+    RIGHT_FLOSS_POSE_4,
+    LEFT_FLOSS_POSE_1,
+    LEFT_FLOSS_POSE_2,
+    LEFT_FLOSS_POSE_3,
+    LEFT_FLOSS_POSE_4,
     RIGHT_PICTURE_LBERTY_POSE,
     LEFT_PICTURE_LBERTY_POSE,
     LEFT_PICTURE_DAB_POSE,
@@ -123,6 +131,53 @@ def gesture_67(reachy, step_duration=None, total_seconds=None):
             break
 
     print("67 gesture complete.")
+
+
+FLOSS_POSES = (
+    (LEFT_FLOSS_POSE_1, RIGHT_FLOSS_POSE_1),
+    (LEFT_FLOSS_POSE_2, RIGHT_FLOSS_POSE_2),
+    (LEFT_FLOSS_POSE_3, RIGHT_FLOSS_POSE_3),
+    (LEFT_FLOSS_POSE_4, RIGHT_FLOSS_POSE_4),
+)
+
+# One full floss cycle: positions 1 -> 2 -> 1 -> 3 -> 4 (0-based indices).
+FLOSS_CYCLE = (0, 1, 0, 2, 3)
+
+
+def gesture_floss(reachy, step_duration=None, total_seconds=None):
+    """Perform the synchronized four-pose floss dance."""
+    if reachy is None:
+        print("Skipping floss gesture: Reachy not connected.")
+        return
+
+    if reachy.l_arm is None or reachy.r_arm is None:
+        print("Skipping floss gesture: both arms are required.")
+        return
+
+    print("\nStarting synchronized floss dance.")
+
+    sequence = FLOSS_CYCLE * 2
+    started_at = time.monotonic()
+    step = 0
+
+    while True:
+        pose_index = sequence[step % len(sequence)]
+        left_pose, right_pose = FLOSS_POSES[pose_index]
+        move_both_arms(
+            reachy,
+            left_pose=left_pose,
+            right_pose=right_pose,
+            duration=step_duration,
+        )
+        step += 1
+
+        if total_seconds is None:
+            if step >= len(sequence):
+                break
+        elif time.monotonic() - started_at >= total_seconds:
+            break
+
+    print("Floss dance complete.")
 
 
 def _fun_picture_pose(reachy, left_pose, right_pose, label):
