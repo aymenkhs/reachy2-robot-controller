@@ -1,8 +1,6 @@
-__pycache__/
-.DS_Store
-.env
 .venv/
-.vscode/
-.idea/
-.pytest_cache/
-.pytest_cache/
+.env
+
+reachy_full_demo
+
+**/__pycache__
