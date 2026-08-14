@@ -171,7 +171,7 @@ def gesture_floss(reachy, step_duration=None):
     print("Floss dance complete.")
 
 
-def _fun_picture_pose(reachy, left_pose, right_pose, label):
+def _fun_picture_pose(reachy, left_pose, right_pose, label, head_look=None):
     """Move both arms into one synchronized fun-picture pose."""
     if reachy is None:
         print(f"Skipping {label} pose: Reachy not connected.")
@@ -184,12 +184,39 @@ def _fun_picture_pose(reachy, left_pose, right_pose, label):
     print(f"\nStarting synchronized fun picture pose: {label}.")
 
     try:
-        move_both_arms(
-            reachy,
-            left_pose=left_pose,
-            right_pose=right_pose,
-            duration=None,
-        )
+        if head_look is None:
+            move_both_arms(
+                reachy,
+                left_pose=left_pose,
+                right_pose=right_pose,
+                duration=None,
+            )
+        else:
+            x, y, z, duration = head_look
+
+            def move_head():
+                reachy.head.look_at(
+                    x=x,
+                    y=y,
+                    z=z,
+                    duration=duration,
+                )
+
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                head_move = executor.submit(move_head)
+                left_move = executor.submit(
+                    move_4x4,
+                    reachy.l_arm,
+                    left_pose,
+                )
+                right_move = executor.submit(
+                    move_4x4,
+                    reachy.r_arm,
+                    right_pose,
+                )
+                head_move.result()
+                left_move.result()
+                right_move.result()
     except Exception as e:
         print(e)
 
@@ -213,6 +240,12 @@ def fun_pose_dab(reachy, step_duration=None, total_seconds=None):
         LEFT_PICTURE_DAB_POSE,
         RIGHT_PICTURE_DAB_POSE,
         "dab",
+        head_look=(
+            0.5,
+            0.0,
+            -0.12,
+            ARM_MOVE_DURATION_SECONDS,
+        ),
     )
 
 
@@ -425,6 +458,22 @@ def speaking_motion(reachy, stop_event=None, style="calm"):
 
     except Exception as e:
         print("speaking_motion skipped:", e)
+
+
+def reset_right_arm_to_base(reachy):
+    """Return the right arm to the default resting pose."""
+    if reachy is None:
+        return
+
+    if reachy.r_arm is None:
+        print("Right arm not available for reset.")
+        return
+
+    print("\nReturning right arm to default position.")
+    try:
+        move_4x4(reachy.r_arm, BASE_POSE)
+    except Exception as e:
+        print("Right arm reset skipped:", e)
 
 
 def return_to_normal_state(reachy, arm=None):
