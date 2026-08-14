@@ -144,7 +144,7 @@ FLOSS_POSES = (
 FLOSS_CYCLE = (0, 1, 0, 2, 3)
 
 
-def gesture_floss(reachy, step_duration=None, total_seconds=None):
+def gesture_floss(reachy, step_duration=None):
     """Perform the synchronized four-pose floss dance."""
     if reachy is None:
         print("Skipping floss gesture: Reachy not connected.")
@@ -156,12 +156,10 @@ def gesture_floss(reachy, step_duration=None, total_seconds=None):
 
     print("\nStarting synchronized floss dance.")
 
+    # Exactly two cycles: 1 -> 2 -> 1 -> 3 -> 4, twice.
     sequence = FLOSS_CYCLE * 2
-    started_at = time.monotonic()
-    step = 0
 
-    while True:
-        pose_index = sequence[step % len(sequence)]
+    for pose_index in sequence:
         left_pose, right_pose = FLOSS_POSES[pose_index]
         move_both_arms(
             reachy,
@@ -169,13 +167,6 @@ def gesture_floss(reachy, step_duration=None, total_seconds=None):
             right_pose=right_pose,
             duration=step_duration,
         )
-        step += 1
-
-        if total_seconds is None:
-            if step >= len(sequence):
-                break
-        elif time.monotonic() - started_at >= total_seconds:
-            break
 
     print("Floss dance complete.")
 

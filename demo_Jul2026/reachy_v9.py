@@ -994,21 +994,15 @@ def run_67_show() -> dict[str, Any]:
 
 def run_floss_show() -> dict[str, Any]:
     """Run the floss dance for two full 1-2-1-3-4 cycles."""
-    # Ten steps per show: (1, 2, 1, 3, 4) repeated twice.
-    total_seconds = 10 * ACTION_FLOSS_STEP_SECONDS
-
     try:
-        print(
-            f"\nStarting floss dance for {total_seconds:.2f} seconds."
-        )
+        print("\nStarting floss dance (two cycles).")
 
         if reachy is None:
-            time.sleep(total_seconds)
+            time.sleep(10 * ACTION_FLOSS_STEP_SECONDS)
         else:
             gesture_floss(
                 reachy,
                 step_duration=ACTION_FLOSS_STEP_SECONDS,
-                total_seconds=total_seconds,
             )
 
         return {
