@@ -15,7 +15,7 @@ SAFETY_PAUSES = False
 
 # Duration used for every arm pose transition in robot/motion.py.
 ARM_MOVE_DURATION_SECONDS = 2.0
-DAB_HOLD_SECONDS = 10.0
+POSE_HOLD_SECONDS = 10.0
 
 
 # =========================================================

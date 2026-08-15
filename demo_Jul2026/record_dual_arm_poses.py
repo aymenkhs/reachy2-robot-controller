@@ -103,6 +103,10 @@ def main() -> None:
         "Press Enter to power the motors and replay... "
     )
     reachy.turn_on()
+    # Explicit Arm.turn_on() is required by Reachy SDK 1.0.7 to power each
+    # separate gripper after recording in compliant mode.
+    reachy.l_arm.turn_on()
+    reachy.r_arm.turn_on()
 
     for number, (left_pose, right_pose) in enumerate(pose_pairs, start=1):
         replay_pair(reachy, left_pose, right_pose, number)

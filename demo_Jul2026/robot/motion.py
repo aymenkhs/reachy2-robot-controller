@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-from config import ARM_MOVE_DURATION_SECONDS, DAB_HOLD_SECONDS, SAFETY_PAUSES
+from config import ARM_MOVE_DURATION_SECONDS, POSE_HOLD_SECONDS, SAFETY_PAUSES
 from robot.poses import (
     BASE_POSE,
     PRE_GRASP_POSE,
@@ -259,10 +259,13 @@ def _fun_picture_pose(reachy, left_pose, right_pose, label, head_look=None):
                 head_move.result()
                 left_move.result()
                 right_move.result()
+        print(f"{label} pose completed.")
+        print(f"Holding the pose for {POSE_HOLD_SECONDS:.0f} seconds.")
+        time.sleep(POSE_HOLD_SECONDS)
     except Exception as e:
         print(e)
 
-    print(f"{label} pose completed.")
+    
 
 
 def fun_pose_liberty(reachy, step_duration=None, total_seconds=None):
@@ -289,8 +292,6 @@ def fun_pose_dab(reachy, step_duration=None, total_seconds=None):
             ARM_MOVE_DURATION_SECONDS,
         ),
     )
-    print(f"Holding the dab pose for {DAB_HOLD_SECONDS:.0f} seconds.")
-    time.sleep(DAB_HOLD_SECONDS)
 
 
 def fun_pose_yahoo(reachy, step_duration=None, total_seconds=None):
