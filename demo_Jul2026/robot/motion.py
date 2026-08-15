@@ -272,9 +272,26 @@ def open_gripper(arm):
         print("No gripper found.")
         return
 
+    ensure_gripper_on(arm)
     print("Opening gripper...")
     arm.gripper.set_opening(100)
     time.sleep(0.8)
+
+
+def ensure_gripper_on(arm):
+    """Power an arm's gripper before sending an opening command."""
+    if arm.gripper is None:
+        raise RuntimeError("No gripper is available on this arm.")
+
+    if arm.gripper.is_on():
+        return
+
+    print("Gripper is off. Powering on the arm and gripper...")
+    arm.turn_on()
+    time.sleep(0.5)
+
+    if not arm.gripper.is_on():
+        raise RuntimeError("Gripper did not power on.")
 
 
 def close_gripper_for_ball(arm, opening=25):
@@ -282,6 +299,7 @@ def close_gripper_for_ball(arm, opening=25):
         print("No gripper found.")
         return
 
+    ensure_gripper_on(arm)
     print(f"Closing gripper to {opening}...")
     arm.gripper.set_opening(opening)
     time.sleep(1.0)
@@ -626,12 +644,14 @@ def grasp_mic_init(reachy, label="mic grab"):
         print("Left gripper not available.")
         return
 
-    #open_gripper(arm)
-    move_4x4(arm, MIC_POSE, duration=4.0)
-
-    close_gripper_for_ball(arm, opening=5)
-
-    print(f"{label} Mic grabbed.")
+    try:
+        # open_gripper(arm)
+        move_4x4(arm, MIC_POSE, duration=4.0)
+        close_gripper_for_ball(arm, opening=5)
+        print(f"{label} Mic grabbed.")
+    except RuntimeError as exc:
+        # A gripper fault should not terminate the complete voice demo.
+        print(f"{label} skipped: {exc}")
 
 def mic_forward(reachy, label="fwd"):
     if reachy is None:
