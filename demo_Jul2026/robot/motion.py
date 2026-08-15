@@ -365,6 +365,28 @@ def _fun_picture_pose(
         print(f"{label} pose completed.")
         print(f"Holding the pose for {POSE_HOLD_SECONDS:.0f} seconds.")
         time.sleep(POSE_HOLD_SECONDS)
+
+        if left_intermediate is not None or right_intermediate is not None:
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                via_moves = []
+                if left_intermediate is not None:
+                    via_moves.append(
+                        executor.submit(
+                            move_4x4,
+                            reachy.l_arm,
+                            left_intermediate,
+                        )
+                    )
+                if right_intermediate is not None:
+                    via_moves.append(
+                        executor.submit(
+                            move_4x4,
+                            reachy.r_arm,
+                            right_intermediate,
+                        )
+                    )
+                for via_move in via_moves:
+                    via_move.result()
     except Exception as e:
         print(e)
 
