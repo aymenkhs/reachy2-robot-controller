@@ -19,6 +19,10 @@ from robot.poses import (
     RIGHT_67_POSE_2,
     LEFT_67_POSE_1,
     LEFT_67_POSE_2,
+    LEFT_ROBOT_DANCE_UP,
+    LEFT_ROBOT_DANCE_DOWN,
+    RIGHT_ROBOT_DANCE_UP,
+    RIGHT_ROBOT_DANCE_DOWN,
     RIGHT_FLOSS_POSE_1,
     RIGHT_FLOSS_POSE_2,
     RIGHT_FLOSS_POSE_3,
@@ -131,6 +135,44 @@ def gesture_67(reachy, step_duration=None, total_seconds=None):
             break
 
     print("67 gesture complete.")
+
+
+def gesture_robot_dance(reachy, step_duration=None, total_seconds=None):
+    """Perform the alternating up/down two-pose robot dance."""
+    if reachy is None:
+        print("Skipping robot dance: Reachy not connected.")
+        return
+
+    if reachy.l_arm is None or reachy.r_arm is None:
+        print("Skipping robot dance: both arms are required.")
+        return
+
+    print("\nStarting synchronized robot dance.")
+
+    pairs = (
+        (LEFT_ROBOT_DANCE_UP, RIGHT_ROBOT_DANCE_DOWN),
+        (LEFT_ROBOT_DANCE_DOWN, RIGHT_ROBOT_DANCE_UP),
+    )
+    started_at = time.monotonic()
+    step = 0
+
+    while True:
+        left_pose, right_pose = pairs[step % len(pairs)]
+        move_both_arms(
+            reachy,
+            left_pose=left_pose,
+            right_pose=right_pose,
+            duration=step_duration,
+        )
+        step += 1
+
+        if total_seconds is None:
+            if step >= len(pairs):
+                break
+        elif time.monotonic() - started_at >= total_seconds:
+            break
+
+    print("Robot dance complete.")
 
 
 FLOSS_POSES = (

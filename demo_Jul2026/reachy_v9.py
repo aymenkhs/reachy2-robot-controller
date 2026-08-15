@@ -31,6 +31,7 @@ from robot.motion import (
     mic_backward,
     gesture_67,
     gesture_floss,
+    gesture_robot_dance,
     reset_after_action,
     FUN_PICTURE_POSES,
 )
@@ -93,6 +94,15 @@ ACTION_67_SOUND_PATH: Final = "67-sound.mp3"
 ACTION_67_SOUND_VOLUME: Final = 0.70
 ACTION_67_STEP_SECONDS: Final = 1.0
 ACTION_FLOSS_STEP_SECONDS: Final = 0.8
+# Put robot-dance tracks beside this script, then list the filenames here.
+# One track is chosen at random each time the robot dance runs.
+ACTION_ROBOT_DANCE_SOUND_PATHS: Final = (
+    "robot-dance-1.mp3",
+    "robot-dance-2.mp3",
+    "robot-dance-3.mp3",
+)
+ACTION_ROBOT_DANCE_SOUND_VOLUME: Final = 0.70
+ACTION_ROBOT_DANCE_STEP_SECONDS: Final = 1.0
 
 SAMPLE_RATE: Final = 24_000
 CHANNELS: Final = 1
@@ -192,6 +202,21 @@ DANCE_FLOSS_TOOL = {
         "Perform Reachy's floss dance with synchronized dual-arm poses. "
         "Call this when the visitor says floss, do the floss, teach me the "
         "floss, or asks for the floss dance."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
+DANCE_ROBOT_TOOL = {
+    "type": "function",
+    "name": "perform_robot_dance",
+    "description": (
+        "Perform Reachy's classic robot dance with alternating up/down arm "
+        "poses and random dance music. Call this when the visitor says "
+        "robot dance, do the robot, robot, or asks for the robot dance."
     ),
     "parameters": {
         "type": "object",
@@ -1020,6 +1045,75 @@ def run_floss_show() -> dict[str, Any]:
         }
 
 
+def run_robot_dance_show() -> dict[str, Any]:
+    """Play a random dance track while alternating robot-dance arm poses."""
+    available_tracks = [
+        path
+        for path_value in ACTION_ROBOT_DANCE_SOUND_PATHS
+        if (path := resolve_local_media_path(path_value)).is_file()
+    ]
+
+    if not available_tracks:
+        configured = ", ".join(ACTION_ROBOT_DANCE_SOUND_PATHS)
+        return {
+            "error": (
+                "No robot-dance music was found. Expected one of: "
+                f"{configured}"
+            ),
+        }
+
+    sound_path = random.choice(available_tracks)
+
+    try:
+        decoded = miniaudio.decode_file(
+            str(sound_path.resolve()),
+            output_format=miniaudio.SampleFormat.SIGNED16,
+        )
+        audio_samples = np.frombuffer(
+            decoded.samples,
+            dtype=np.int16,
+        ).reshape(-1, decoded.nchannels)
+        audio_samples = (
+            audio_samples.astype(np.float32)
+            / 32768.0
+            * ACTION_ROBOT_DANCE_SOUND_VOLUME
+        )
+        sound_seconds = decoded.num_frames / decoded.sample_rate
+
+        print(
+            f'\nPlaying robot-dance track "{sound_path.name}" '
+            f"for {sound_seconds:.2f} seconds."
+        )
+        sd.play(audio_samples, samplerate=decoded.sample_rate)
+
+        if reachy is None:
+            time.sleep(sound_seconds)
+        else:
+            gesture_robot_dance(
+                reachy,
+                step_duration=ACTION_ROBOT_DANCE_STEP_SECONDS,
+                total_seconds=sound_seconds,
+            )
+
+        return {
+            "status": "completed",
+            "track": sound_path.name,
+            "instruction": (
+                "The robot dance finished. Give one very short cheerful "
+                "acknowledgement and do not call the dance tool again."
+            ),
+        }
+
+    except Exception as exc:
+        return {
+            "error": (
+                f"Robot dance failed: {type(exc).__name__}: {exc}"
+            ),
+        }
+    finally:
+        sd.stop()
+
+
 def perform_fun_pose() -> dict[str, Any]:
     """Pick a random fun picture pose and hold it for a photo."""
     try:
@@ -1296,6 +1390,11 @@ async def run_tool(
         await asyncio.to_thread(reset_after_action, reachy)
         return result
 
+    if tool_name == "perform_robot_dance":
+        result = await asyncio.to_thread(run_robot_dance_show)
+        await asyncio.to_thread(reset_after_action, reachy)
+        return result
+
     if tool_name == "perform_fun_pose":
         result = await asyncio.to_thread(perform_fun_pose)
         await asyncio.to_thread(reset_after_action, reachy)
@@ -1485,18 +1584,21 @@ async def main() -> None:
                     "one sentence. Use two sentences when necessary and "
                     "never exceed three sentences.\n\n"
 
-                    "HIGHEST-PRIORITY DANCE RULES: Reachy knows two dances "
-                    "right now, and a third dance will be added later.\n"
+                    "HIGHEST-PRIORITY DANCE RULES: Reachy knows three dances "
+                    "right now, and another dance will be added later.\n"
                     "- 67 meme dance: if the visitor says 67, six seven, "
                     "6 7, meme, or asks for the 67 dance, call "
                     "perform_67_dance immediately.\n"
                     "- Floss dance: if the visitor says floss, do the floss, "
                     "teach me the floss, or asks for the floss dance, call "
                     "perform_floss_dance immediately.\n"
+                    "- Robot dance: if the visitor says robot dance, do the "
+                    "robot, robot, or asks for the robot dance, call "
+                    "perform_robot_dance immediately.\n"
                     "- Generic dance request: if the visitor asks you to "
                     "dance without naming a dance, cheerfully ask whether "
-                    "they want the 67 dance or the floss dance, then call "
-                    "the matching tool.\n"
+                    "they want the 67 dance, the floss dance, or the robot "
+                    "dance, then call the matching tool.\n"
                     "For any dance tool, do not speak before calling it. "
                     "After the tool finishes, give only a very short "
                     "cheerful acknowledgement.\n\n"
@@ -1570,6 +1672,7 @@ async def main() -> None:
                     DEAKIN_LOOKUP_TOOL,
                     DANCE_67_TOOL,
                     DANCE_FLOSS_TOOL,
+                    DANCE_ROBOT_TOOL,
                     FUN_POSE_TOOL,
                 ],
                 "tool_choice": "auto",
