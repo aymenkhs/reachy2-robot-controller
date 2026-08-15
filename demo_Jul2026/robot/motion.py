@@ -7,11 +7,17 @@ import numpy as np
 
 from config import ARM_MOVE_DURATION_SECONDS, POSE_HOLD_SECONDS, SAFETY_PAUSES
 from robot.poses import (
+    CUP_START_POSE,
+    CUP_APPROACH_POSE,
+    CUP_GRASP_POSE,
+    CUP_LIFT_POSE,
+    CUP_HANDOVER_POSE,
     BASE_POSE,
-    PRE_GRASP_POSE,
-    GRASP_POSE,
-    LIFT_POSE,
-    HANDOVER_POSE,
+    CUP_START_POSE,
+    CUP_APPROACH_POSE,
+    CUP_GRASP_POSE,
+    CUP_LIFT_POSE,
+    CUP_HANDOVER_POSE,
     MIC_POSE,
     VISITOR_POSE,
     REACHYMIC_POSE,
@@ -670,40 +676,39 @@ def grasp_handover_release(reachy, label="grasp"):
 
     print()
     print(f"Starting {label} sequence.")
-    print("Make sure the ball is in the same position as the recorded poses.")
+    print("Make sure the cup is in the same position as the recorded poses.")
 
     wait_if_safety("Press Enter to start movement... ")
 
     open_gripper(arm)
 
-    move_4x4(arm, BASE_POSE, duration=4.0)
-    move_4x4(arm, PRE_GRASP_POSE, duration=4.0)
+    move_4x4(arm, CUP_START_POSE, duration=ARM_MOVE_DURATION_SECONDS)
+    move_4x4(arm, CUP_APPROACH_POSE, duration=ARM_MOVE_DURATION_SECONDS)
 
-    wait_if_safety("Check PRE_GRASP_POSE. Press Enter to continue to GRASP_POSE... ")
+    wait_if_safety("Check CUP_APPROACH_POSE. Press Enter to continue to CUP_GRASP_POSE... ")
 
-    move_4x4(arm, GRASP_POSE, duration=3.0)
+    move_4x4(arm, CUP_GRASP_POSE, duration=ARM_MOVE_DURATION_SECONDS)
 
-    wait_if_safety("Check gripper around ball. Press Enter to close gripper... ")
+    wait_if_safety("Check gripper around cup. Press Enter to close gripper... ")
 
     close_gripper_for_ball(arm, opening=25)
 
     wait_if_safety("Press Enter to lift... ")
 
-    move_4x4(arm, LIFT_POSE, duration=3.0)
-    move_4x4(arm, HANDOVER_POSE, duration=4.0)
+    move_4x4(arm, CUP_LIFT_POSE, duration=ARM_MOVE_DURATION_SECONDS)
+    move_4x4(arm, CUP_HANDOVER_POSE, duration=ARM_MOVE_DURATION_SECONDS)
 
-    wait_if_safety("Press Enter to open gripper and release ball... ")
+    wait_if_safety("Press Enter to open gripper and release cup... ")
 
-    #open_gripper(arm)
     time.sleep(5.0)
 
-    wait_if_safety("Cup released. Press Enter to return Reachy to normal state... ")
+    move_4x4(arm, CUP_LIFT_POSE, duration=ARM_MOVE_DURATION_SECONDS)
+    move_4x4(arm, CUP_GRASP_POSE, duration=ARM_MOVE_DURATION_SECONDS)
+    open_gripper(arm)
+    move_4x4(arm, CUP_APPROACH_POSE, duration=ARM_MOVE_DURATION_SECONDS)
+    move_4x4(arm, CUP_START_POSE, duration=ARM_MOVE_DURATION_SECONDS)
 
-    move_4x4(arm, GRASP_POSE, duration=4.0)
-
-    #move_4x4(arm, BASE_POSE, duration=4.0)
-
-    #return_to_normal_state(reachy, arm)
+    reset_after_action(reachy)
 
     print(f"{label} sequence complete.")
 
