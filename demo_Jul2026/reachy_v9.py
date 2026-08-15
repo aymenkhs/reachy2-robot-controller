@@ -97,7 +97,11 @@ ACTION_67_STEP_SECONDS: Final = 1.0
 ACTION_DISCO_STEP_SECONDS: Final = 1.0
 ACTION_DISCO_CYCLES: Final = 5
 ACTION_DISCO_DURATION_SECONDS: Final = 10.0
-ACTION_DISCO_SOUND_PATH: Final = "disco.mp3"
+# Put disco tracks beside this script, then list the filenames here.
+# One track is chosen at random each time the disco dance runs.
+ACTION_DISCO_SOUND_PATHS: Final = (
+    "disco.mp3",
+)
 ACTION_DISCO_SOUND_VOLUME: Final = 0.70
 ACTION_FLOSS_STEP_SECONDS: Final = 0.8
 # Put robot-dance tracks beside this script, then list the filenames here.
@@ -106,7 +110,7 @@ ACTION_ROBOT_DANCE_SOUND_PATHS: Final = (
     "disco.mp3",
 )
 ACTION_ROBOT_DANCE_SOUND_VOLUME: Final = 0.70
-ACTION_ROBOT_DANCE_STEP_SECONDS: Final = 1.0
+ACTION_ROBOT_DANCE_STEP_SECONDS: Final = 4.0
 
 SAMPLE_RATE: Final = 24_000
 CHANNELS: Final = 1
@@ -218,9 +222,9 @@ DANCE_DISCO_TOOL = {
     "type": "function",
     "name": "perform_disco_dance",
     "description": (
-        "Perform Reachy's synchronized crossed-arm disco dance. Call this "
-        "when the visitor says disco, disco dance, robot disco, party, "
-        "or asks Reachy to do the disco."
+        "Perform Reachy's synchronized crossed-arm disco dance with random "
+        "disco music. Call this when the visitor says disco, disco dance, "
+        "robot disco, party, or asks Reachy to do the disco."
     ),
     "parameters": {
         "type": "object",
@@ -1050,13 +1054,27 @@ def run_floss_show() -> dict[str, Any]:
 
 
 def run_disco_show() -> dict[str, Any]:
-    """Play disco music while running crossed synchronized arm cycles."""
-    sound_path = resolve_local_media_path(ACTION_DISCO_SOUND_PATH)
+    """Play a random disco track while running crossed synchronized arm cycles."""
+    available_tracks = []
+    try:
+        available_tracks = [
+            path
+            for path_value in ACTION_DISCO_SOUND_PATHS
+            if (path := resolve_local_media_path(path_value)).is_file()
+        ]
+    except Exception as e:
+        print(e)
 
-    if not sound_path.is_file():
+    if not available_tracks:
+        configured = ", ".join(ACTION_DISCO_SOUND_PATHS)
         return {
-            "error": f"Disco music was not found: {sound_path}",
+            "error": (
+                "No disco music was found. Expected one of: "
+                f"{configured}"
+            ),
         }
+
+    sound_path = random.choice(available_tracks)
 
     try:
         decoded = miniaudio.decode_file(
@@ -1086,8 +1104,8 @@ def run_disco_show() -> dict[str, Any]:
         )
 
         print(
-            f'\nPlaying "{sound_path.name}" with the disco dance for '
-            f"{ACTION_DISCO_DURATION_SECONDS:.0f} seconds."
+            f'\nPlaying disco track "{sound_path.name}" with the disco '
+            f"dance for {ACTION_DISCO_DURATION_SECONDS:.0f} seconds."
         )
         sd.play(audio_samples, samplerate=decoded.sample_rate)
 
@@ -1204,8 +1222,10 @@ def perform_fun_pose() -> dict[str, Any]:
         return {
             "status": "completed",
             "instruction": (
-                f"Reachy finished the picture pose. "
-                "Cheerfully ask them to take a picture."
+                "The picture pose is finished. With a little cute "
+                "uncertainty, tell the visitor you tried your best with "
+                "your little robot hands, and that you hope they got a "
+                "good photo."
             ),
         }
 
@@ -1919,11 +1939,43 @@ async def main() -> None:
                                 "perform_fun_pose": perform_fun_pose,
                             }[scheduled_action]
 
-                            await asyncio.to_thread(action_runner)
+                            action_result = await asyncio.to_thread(
+                                action_runner
+                            )
                             await asyncio.to_thread(
                                 reset_after_action,
                                 reachy,
                             )
+
+                            if scheduled_action == "perform_fun_pose":
+                                followup_instruction = (
+                                    action_result.get("instruction")
+                                    if isinstance(action_result, dict)
+                                    else None
+                                )
+                                if followup_instruction:
+                                    await connection.response.create(
+                                        response={
+                                            "instructions": (
+                                                followup_instruction
+                                            ),
+                                            "tool_choice": "none",
+                                        }
+                                    )
+                                    (
+                                        followup_audio,
+                                        _,
+                                        _,
+                                    ) = await receive_response(
+                                        connection=connection,
+                                        client=client,
+                                        knowledge_base=knowledge_base,
+                                    )
+                                    await asyncio.to_thread(
+                                        play_audio,
+                                        followup_audio,
+                                        "calm",
+                                    )
 
                         # play_audio() waits until speech has fully finished.
                         # Run the grasp demo only after the treats response.
