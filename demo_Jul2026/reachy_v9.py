@@ -34,6 +34,7 @@ from robot.motion import (
     gesture_robot_dance,
     reset_after_action,
     FUN_PICTURE_POSES,
+    FUN_POSE_DISPLAY_NAMES,
 )
 from voice import process_pcm16
 
@@ -1216,7 +1217,8 @@ def perform_fun_pose() -> dict[str, Any]:
     try:
         pose_name, pose_fn = random.choice(FUN_PICTURE_POSES)
 
-        print(f"\nSelected fun picture pose: {pose_name}.")
+        display_name = FUN_POSE_DISPLAY_NAMES.get(pose_name, pose_name)
+        print(f"\nSelected fun picture pose: {display_name}.")
 
         if reachy is None:
             time.sleep(ARM_MOVE_DURATION_SECONDS)
@@ -1226,10 +1228,11 @@ def perform_fun_pose() -> dict[str, Any]:
         return {
             "status": "completed",
             "instruction": (
-                "The picture pose is finished. With a little cute "
-                "uncertainty, tell the visitor you tried your best with "
-                "your little robot hands, and that you hope they got a "
-                "good photo."
+                f"The {display_name} picture pose is finished. With a "
+                "little cute uncertainty, tell the visitor which pose "
+                f"you just did (the {display_name} pose), that you tried "
+                "your best with your little robot hands, and that you "
+                "hope they got a good photo."
             ),
         }
 

@@ -436,6 +436,12 @@ FUN_PICTURE_POSES = (
     ("yahoo", fun_pose_yahoo),
 )
 
+FUN_POSE_DISPLAY_NAMES = {
+    "liberty": "Statue of Liberty",
+    "dab": "dab",
+    "yahoo": "Yahoo",
+}
+
 def open_gripper(arm):
     if arm.gripper is None:
         print("No gripper found.")
