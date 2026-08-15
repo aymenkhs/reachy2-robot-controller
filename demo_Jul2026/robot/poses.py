@@ -95,6 +95,38 @@ LEFT_67_POSE_2 = np.array([
 ], dtype=np.float64)
 
 
+# Dual-arm "robot dance": alternate opposite arm heights.
+# Position 1 = left up + right down; position 2 = left down + right up.
+# Replace these matrices with recorded poses when available.
+LEFT_ROBOT_DANCE_UP = np.array([
+    [-0.579463, -0.810920, -0.081439,  0.193274],
+    [-0.813376,  0.569111,  0.120550,  0.381900],
+    [-0.051408,  0.136095, -0.989361,  0.381745],
+    [ 0.000000,  0.000000,  0.000000,  1.000000],
+], dtype=np.float64)
+
+LEFT_ROBOT_DANCE_DOWN = np.array([
+    [-0.056132, -0.050082, -0.997167,  0.341621],
+    [-0.056777,  0.997285, -0.046892,  0.219290],
+    [ 0.996808,  0.053984, -0.058823, -0.255613],
+    [ 0.000000,  0.000000,  0.000000,  1.000000],
+], dtype=np.float64)
+
+RIGHT_ROBOT_DANCE_UP = np.array([
+    [-0.545555,  0.836014, -0.058734,  0.174338],
+    [ 0.836147,  0.547713,  0.029490, -0.442599],
+    [ 0.056823, -0.033022, -0.997838,  0.421009],
+    [ 0.000000,  0.000000,  0.000000,  1.000000],
+], dtype=np.float64)
+
+RIGHT_ROBOT_DANCE_DOWN = np.array([
+    [ 0.324875,  0.389728, -0.861724,  0.310762],
+    [-0.163513,  0.920572,  0.354697, -0.320529],
+    [ 0.931515,  0.025671,  0.362796, -0.416881],
+    [ 0.000000,  0.000000,  0.000000,  1.000000],
+], dtype=np.float64)
+
+
 ## Pictures poses
 
 # Statue of liberty
