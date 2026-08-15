@@ -1204,8 +1204,10 @@ def perform_fun_pose() -> dict[str, Any]:
         return {
             "status": "completed",
             "instruction": (
-                f"Reachy finished the picture pose. "
-                "Cheerfully ask them to take a picture."
+                "The picture pose is finished. With a little cute "
+                "uncertainty, tell the visitor you tried your best with "
+                "your little robot hands, and that you hope they got a "
+                "good photo."
             ),
         }
 
@@ -1919,11 +1921,43 @@ async def main() -> None:
                                 "perform_fun_pose": perform_fun_pose,
                             }[scheduled_action]
 
-                            await asyncio.to_thread(action_runner)
+                            action_result = await asyncio.to_thread(
+                                action_runner
+                            )
                             await asyncio.to_thread(
                                 reset_after_action,
                                 reachy,
                             )
+
+                            if scheduled_action == "perform_fun_pose":
+                                followup_instruction = (
+                                    action_result.get("instruction")
+                                    if isinstance(action_result, dict)
+                                    else None
+                                )
+                                if followup_instruction:
+                                    await connection.response.create(
+                                        response={
+                                            "instructions": (
+                                                followup_instruction
+                                            ),
+                                            "tool_choice": "none",
+                                        }
+                                    )
+                                    (
+                                        followup_audio,
+                                        _,
+                                        _,
+                                    ) = await receive_response(
+                                        connection=connection,
+                                        client=client,
+                                        knowledge_base=knowledge_base,
+                                    )
+                                    await asyncio.to_thread(
+                                        play_audio,
+                                        followup_audio,
+                                        "calm",
+                                    )
 
                         # play_audio() waits until speech has fully finished.
                         # Run the grasp demo only after the treats response.
