@@ -19,6 +19,10 @@ from robot.poses import (
     RIGHT_67_POSE_2,
     LEFT_67_POSE_1,
     LEFT_67_POSE_2,
+    RIGHT_DISCO_POSE_1,
+    RIGHT_DISCO_POSE_2,
+    LEFT_DISCO_POSE_1,
+    LEFT_DISCO_POSE_2,
     LEFT_ROBOT_DANCE_UP,
     LEFT_ROBOT_DANCE_DOWN,
     RIGHT_ROBOT_DANCE_UP,
@@ -135,6 +139,37 @@ def gesture_67(reachy, step_duration=None, total_seconds=None):
             break
 
     print("67 gesture complete.")
+
+
+def gesture_disco(reachy, step_duration=1.0, cycles=2):
+    """Perform crossed synchronized disco poses for complete cycles."""
+    if reachy is None:
+        print("Skipping disco gesture: Reachy not connected.")
+        return
+
+    if reachy.l_arm is None or reachy.r_arm is None:
+        print("Skipping disco gesture: both arms are required.")
+        return
+
+    print(f"\nStarting synchronized disco dance ({cycles} cycles).")
+
+    crossed_pairs = (
+        # Right pose 1 moves with left pose 2.
+        (LEFT_DISCO_POSE_2, RIGHT_DISCO_POSE_1),
+        # Right pose 2 moves with left pose 1.
+        (LEFT_DISCO_POSE_1, RIGHT_DISCO_POSE_2),
+    )
+
+    for _ in range(cycles):
+        for left_pose, right_pose in crossed_pairs:
+            move_both_arms(
+                reachy,
+                left_pose=left_pose,
+                right_pose=right_pose,
+                duration=step_duration,
+            )
+
+    print("Disco dance complete.")
 
 
 def gesture_robot_dance(reachy, step_duration=None, total_seconds=None):
