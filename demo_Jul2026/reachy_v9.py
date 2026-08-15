@@ -113,6 +113,7 @@ ACTION_FLOSS_STEP_SECONDS: Final = 0.8
 ACTION_ROBOT_DANCE_SOUND_PATHS: Final = (
     "Crazyfrog.mp3",
     "Crazyfrog2.mp3",
+    "Beatit.mp3",
 )
 ACTION_ROBOT_DANCE_SOUND_VOLUME: Final = 0.70
 ACTION_ROBOT_DANCE_STEP_SECONDS: Final = 2.0
