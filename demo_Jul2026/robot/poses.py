@@ -176,6 +176,14 @@ RIGHT_PICTURE_YAHOO_POSE =np.array([
     [ 0.056823, -0.033022, -0.997838,  0.421009],
     [ 0.000000,  0.000000,  0.000000,  1.000000],
 ], dtype=np.float64)
+# Right-arm waypoint: same Yahoo wrist orientation, but more forward and
+# lower, so the hand clears obstacles before swinging up and out.
+RIGHT_PICTURE_YAHOO_INTERMEDIATE_POSE = np.array([
+    [-0.545555,  0.836014, -0.058734,  0.400000],
+    [ 0.836147,  0.547713,  0.029490, -0.280000],
+    [ 0.056823, -0.033022, -0.997838,  0.100000],
+    [ 0.000000,  0.000000,  0.000000,  1.000000],
+], dtype=np.float64)
 
 #disco
 RIGHT_DISCO_POSE_1 = np.array([

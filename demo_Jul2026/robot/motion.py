@@ -47,6 +47,7 @@ from robot.poses import (
     RIGHT_PICTURE_DAB_POSE,
     LEFT_PICTURE_YAHOO_POSE,
     RIGHT_PICTURE_YAHOO_POSE,
+    RIGHT_PICTURE_YAHOO_INTERMEDIATE_POSE,
 )
 
 
@@ -88,7 +89,14 @@ def move_4x4(arm, pose, duration=3.0):
     )
 
 
-def move_both_arms(reachy, left_pose, right_pose, duration=None):
+def move_both_arms(
+    reachy,
+    left_pose,
+    right_pose,
+    duration=None,
+    left_intermediate=None,
+    right_intermediate=None,
+):
     """Move both arms concurrently and wait for both moves to finish."""
     def move_arm(arm, pose):
         if duration is None:
@@ -101,6 +109,20 @@ def move_both_arms(reachy, left_pose, right_pose, duration=None):
             duration=duration,
             wait=True,
         )
+
+    if left_intermediate is not None or right_intermediate is not None:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            via_moves = []
+            if left_intermediate is not None:
+                via_moves.append(
+                    executor.submit(move_arm, reachy.l_arm, left_intermediate)
+                )
+            if right_intermediate is not None:
+                via_moves.append(
+                    executor.submit(move_arm, reachy.r_arm, right_intermediate)
+                )
+            for via_move in via_moves:
+                via_move.result()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         left_move = executor.submit(move_arm, reachy.l_arm, left_pose)
@@ -254,7 +276,15 @@ def gesture_floss(reachy, step_duration=None):
     print("Floss dance complete.")
 
 
-def _fun_picture_pose(reachy, left_pose, right_pose, label, head_look=None):
+def _fun_picture_pose(
+    reachy,
+    left_pose,
+    right_pose,
+    label,
+    head_look=None,
+    left_intermediate=None,
+    right_intermediate=None,
+):
     """Move both arms into one synchronized fun-picture pose."""
     if reachy is None:
         print(f"Skipping {label} pose: Reachy not connected.")
@@ -268,13 +298,45 @@ def _fun_picture_pose(reachy, left_pose, right_pose, label, head_look=None):
 
     try:
         if head_look is None:
-            move_both_arms(
-                reachy,
-                left_pose=left_pose,
-                right_pose=right_pose,
-                duration=None,
-            )
+            if left_intermediate is not None or right_intermediate is not None:
+                move_both_arms(
+                    reachy,
+                    left_pose=left_pose,
+                    right_pose=right_pose,
+                    duration=None,
+                    left_intermediate=left_intermediate,
+                    right_intermediate=right_intermediate,
+                )
+            else:
+                move_both_arms(
+                    reachy,
+                    left_pose=left_pose,
+                    right_pose=right_pose,
+                    duration=None,
+                )
         else:
+            if left_intermediate is not None or right_intermediate is not None:
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    via_moves = []
+                    if left_intermediate is not None:
+                        via_moves.append(
+                            executor.submit(
+                                move_4x4,
+                                reachy.l_arm,
+                                left_intermediate,
+                            )
+                        )
+                    if right_intermediate is not None:
+                        via_moves.append(
+                            executor.submit(
+                                move_4x4,
+                                reachy.r_arm,
+                                right_intermediate,
+                            )
+                        )
+                    for via_move in via_moves:
+                        via_move.result()
+
             x, y, z, duration = head_look
 
             def move_head():
@@ -342,6 +404,7 @@ def fun_pose_yahoo(reachy, step_duration=None, total_seconds=None):
         LEFT_PICTURE_YAHOO_POSE,
         RIGHT_PICTURE_YAHOO_POSE,
         "yahoo",
+        right_intermediate=RIGHT_PICTURE_YAHOO_INTERMEDIATE_POSE,
     )
 
 
