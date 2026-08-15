@@ -13,7 +13,6 @@ import numpy as np
 import miniaudio
 import sounddevice as sd
 from openai import AsyncOpenAI
-from openai.helpers import LocalAudioPlayer
 from pypdf import PdfReader
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -35,6 +34,7 @@ from robot.motion import (
     reset_after_action,
     FUN_PICTURE_POSES,
 )
+from voice import process_pcm16
 
 
 
@@ -616,6 +616,16 @@ def stop_speaking_motion(
 # Speaker playback
 # =========================================================
 
+async def collect_speech_pcm(response) -> bytes:
+    """Buffer a streaming OpenAI speech response into raw PCM bytes."""
+
+    chunks: list[bytes] = []
+    async for chunk in response.iter_bytes(chunk_size=4096):
+        if chunk:
+            chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def play_audio(
     audio_bytes: bytes,
     gesture: str = "calm",
@@ -625,6 +635,8 @@ def play_audio(
     if not audio_bytes:
         print("No response audio was received.")
         return
+
+    audio_bytes = process_pcm16(audio_bytes, SAMPLE_RATE)
 
     audio_samples = np.frombuffer(
         audio_bytes,
@@ -665,18 +677,9 @@ async def say_welcome(client: AsyncOpenAI) -> None:
         ),
         response_format="pcm",
     ) as response:
-        stop_event, motion_thread = start_speaking_motion(
-            gesture="greeting",
-        )
+        audio_bytes = await collect_speech_pcm(response)
 
-        try:
-            await LocalAudioPlayer().play(response)
-
-        finally:
-            stop_speaking_motion(
-                stop_event,
-                motion_thread,
-            )
+    await asyncio.to_thread(play_audio, audio_bytes, "greeting")
 
 # =========================================================
 # Short speech before actual web searches
@@ -696,18 +699,9 @@ async def say_lookup_notice(client: AsyncOpenAI) -> None:
         ),
         response_format="pcm",
     ) as response:
-        stop_event, motion_thread = start_speaking_motion(
-            gesture="thinking",
-        )
+        audio_bytes = await collect_speech_pcm(response)
 
-        try:
-            await LocalAudioPlayer().play(response)
-
-        finally:
-            stop_speaking_motion(
-                stop_event,
-                motion_thread,
-            )
+    await asyncio.to_thread(play_audio, audio_bytes, "thinking")
 
 
 # =========================================================
@@ -773,18 +767,9 @@ async def say_idle_text(
         instructions=instructions,
         response_format="pcm",
     ) as response:
-        stop_event, motion_thread = start_speaking_motion(
-            gesture=gesture,
-        )
+        audio_bytes = await collect_speech_pcm(response)
 
-        try:
-            await LocalAudioPlayer().play(response)
-
-        finally:
-            stop_speaking_motion(
-                stop_event,
-                motion_thread,
-            )
+    await asyncio.to_thread(play_audio, audio_bytes, gesture)
 
 
 async def perform_idle_action(client: AsyncOpenAI) -> None:
