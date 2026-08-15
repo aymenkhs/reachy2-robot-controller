@@ -101,13 +101,17 @@ ACTION_DISCO_DURATION_SECONDS: Final = 10.0
 # One track is chosen at random each time the disco dance runs.
 ACTION_DISCO_SOUND_PATHS: Final = (
     "disco.mp3",
+    "ByeBye.mp3",
+    "Sodapop.mp3",
+    "Sodapop2.mp3",
 )
 ACTION_DISCO_SOUND_VOLUME: Final = 0.70
 ACTION_FLOSS_STEP_SECONDS: Final = 0.8
 # Put robot-dance tracks beside this script, then list the filenames here.
 # One track is chosen at random each time the robot dance runs.
 ACTION_ROBOT_DANCE_SOUND_PATHS: Final = (
-    "disco.mp3",
+    "Crazyfrog.mp3",
+    "Crazyfrog2.mp3",
 )
 ACTION_ROBOT_DANCE_SOUND_VOLUME: Final = 0.70
 ACTION_ROBOT_DANCE_STEP_SECONDS: Final = 2.0
