@@ -1229,10 +1229,9 @@ def perform_fun_pose() -> dict[str, Any]:
         return {
             "status": "completed",
             "instruction": (
-                f"The {display_name} picture pose is finished. With a "
-                "little cute uncertainty, tell the visitor which pose "
+                f"The {display_name} picture pose is finished. Say that"
                 f"you just did (the {display_name} pose), that you tried "
-                "your best with your little robot hands, and that you "
+                "your best with your little robot hands, and "
                 "hope they got a good photo."
             ),
         }
