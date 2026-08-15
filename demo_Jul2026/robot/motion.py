@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-from config import ARM_MOVE_DURATION_SECONDS, SAFETY_PAUSES
+from config import ARM_MOVE_DURATION_SECONDS, DAB_HOLD_SECONDS, SAFETY_PAUSES
 from robot.poses import (
     BASE_POSE,
     PRE_GRASP_POSE,
@@ -247,6 +247,8 @@ def fun_pose_dab(reachy, step_duration=None, total_seconds=None):
             ARM_MOVE_DURATION_SECONDS,
         ),
     )
+    print(f"Holding the dab pose for {DAB_HOLD_SECONDS:.0f} seconds.")
+    time.sleep(DAB_HOLD_SECONDS)
 
 
 def fun_pose_yahoo(reachy, step_duration=None, total_seconds=None):
@@ -474,6 +476,62 @@ def reset_right_arm_to_base(reachy):
         move_4x4(reachy.r_arm, BASE_POSE)
     except Exception as e:
         print("Right arm reset skipped:", e)
+
+
+def reset_after_action(reachy):
+    """Restore Reachy's dashboard default posture after an action.
+
+    Use the SDK's native default joint targets while preserving the current
+    gripper openings, so the left gripper does not drop the microphone.
+    """
+    if reachy is None:
+        return
+
+    if reachy.l_arm is None or reachy.r_arm is None:
+        print("Both arms are required for the post-action reset.")
+        return
+
+    print("\nReturning Reachy to the dashboard default posture.")
+
+    try:
+        # Cancel any queued action poses before issuing the home posture.
+        reachy.cancel_all_goto()
+
+        left_default = reachy.l_arm.get_default_posture_joints("default")
+        right_default = reachy.r_arm.get_default_posture_joints("default")
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            moves = [
+                executor.submit(
+                    reachy.l_arm.goto,
+                    left_default,
+                    duration=ARM_MOVE_DURATION_SECONDS,
+                    wait=True,
+                ),
+                executor.submit(
+                    reachy.r_arm.goto,
+                    right_default,
+                    duration=ARM_MOVE_DURATION_SECONDS,
+                    wait=True,
+                ),
+            ]
+
+            if reachy.head is not None:
+                moves.append(
+                    executor.submit(
+                        reachy.head.goto_posture,
+                        duration=ARM_MOVE_DURATION_SECONDS,
+                        wait=True,
+                        wait_for_goto_end=True,
+                    )
+                )
+
+            for move in moves:
+                move.result()
+
+        print("Reachy is back in the dashboard default posture.")
+    except Exception as e:
+        print("Dashboard default-posture reset skipped:", e)
 
 
 def return_to_normal_state(reachy, arm=None):

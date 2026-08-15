@@ -31,7 +31,7 @@ from robot.motion import (
     mic_backward,
     gesture_67,
     gesture_floss,
-    reset_right_arm_to_base,
+    reset_after_action,
     FUN_PICTURE_POSES,
 )
 
@@ -199,12 +199,6 @@ DANCE_FLOSS_TOOL = {
         "additionalProperties": False,
     },
 }
-
-RIGHT_ARM_RESET_TOOLS: Final = frozenset({
-    "perform_67_dance",
-    "perform_floss_dance",
-    "perform_fun_pose",
-})
 
 FUN_POSE_TOOL = {
     "type": "function",
@@ -1293,13 +1287,19 @@ async def run_tool(
         )
 
     if tool_name == "perform_67_dance":
-        return await asyncio.to_thread(run_67_show)
+        result = await asyncio.to_thread(run_67_show)
+        await asyncio.to_thread(reset_after_action, reachy)
+        return result
 
     if tool_name == "perform_floss_dance":
-        return await asyncio.to_thread(run_floss_show)
+        result = await asyncio.to_thread(run_floss_show)
+        await asyncio.to_thread(reset_after_action, reachy)
+        return result
 
     if tool_name == "perform_fun_pose":
-        return await asyncio.to_thread(perform_fun_pose)
+        result = await asyncio.to_thread(perform_fun_pose)
+        await asyncio.to_thread(reset_after_action, reachy)
+        return result
 
     return {
         "error": f"Unknown tool: {tool_name}"
@@ -1314,7 +1314,7 @@ async def receive_response(
     connection: Any,
     client: AsyncOpenAI,
     knowledge_base: LocalPDFKnowledgeBase,
-) -> tuple[bytes, str, bool]:
+) -> tuple[bytes, str]:
     """
     Receive a Realtime response and satisfy local-first tool calls.
     """
@@ -1322,8 +1322,6 @@ async def receive_response(
     complete_audio = bytearray()
     complete_transcript = ""
     tool_round = 0
-    reset_right_arm = False
-
     while True:
         completed_response = None
         transcript_started = False
@@ -1395,11 +1393,7 @@ async def receive_response(
         ]
 
         if not function_calls:
-            return (
-                bytes(complete_audio),
-                complete_transcript.strip(),
-                reset_right_arm,
-            )
+            return bytes(complete_audio), complete_transcript.strip()
 
         tool_round += 1
 
@@ -1436,9 +1430,6 @@ async def receive_response(
                 tool_name=tool_name,
                 arguments_json=arguments_json,
             )
-
-            if tool_name in RIGHT_ARM_RESET_TOOLS:
-                reset_right_arm = True
 
             await connection.conversation.item.create(
                 item={
@@ -1674,11 +1665,7 @@ async def main() -> None:
 
                         await connection.response.create()
 
-                        (
-                            response_audio,
-                            response_text,
-                            reset_right_arm,
-                        ) = await receive_response(
+                        response_audio, response_text = await receive_response(
                             connection=connection,
                             client=client,
                             knowledge_base=knowledge_base,
@@ -1689,12 +1676,6 @@ async def main() -> None:
                             response_audio,
                             "calm",
                         )
-
-                        if reset_right_arm:
-                            await asyncio.to_thread(
-                                reset_right_arm_to_base,
-                                reachy,
-                            )
 
                         # play_audio() waits until speech has fully finished.
                         # Run the grasp demo only after the treats response.

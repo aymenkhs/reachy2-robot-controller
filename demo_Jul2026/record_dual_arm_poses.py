@@ -1,4 +1,4 @@
-"""Record two synchronized Reachy arm-pose pairs and optionally replay them."""
+"""Record four synchronized Reachy arm-pose pairs and optionally replay them."""
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -72,26 +72,26 @@ def main() -> None:
         "\nDUAL-ARM RECORDING MODE\n"
         "1. Do not call turn_on while positioning the arms manually.\n"
         "2. In the Reachy dashboard, make BOTH arms compliant/torque-off.\n"
-        "3. Record RIGHT arm poses 1 and 2 first.\n"
-        "4. Record LEFT arm poses 1 and 2 afterward.\n"
+        "3. Record RIGHT arm poses 1, 2, 3 and 4 first.\n"
+        "4. Record LEFT arm poses 1, 2, 3 and 4 afterward.\n"
         "5. Matching pose numbers will replay at the same time.\n"
         "6. Never force an arm that feels stiff."
     )
 
     right_poses = [
-        capture_arm_pose(reachy, "right", 1),
-        capture_arm_pose(reachy, "right", 2),
+        capture_arm_pose(reachy, "right", number)
+        for number in range(1, 5)
     ]
     left_poses = [
-        capture_arm_pose(reachy, "left", 1),
-        capture_arm_pose(reachy, "left", 2),
+        capture_arm_pose(reachy, "left", number)
+        for number in range(1, 5)
     ]
     pose_pairs = list(zip(left_poses, right_poses))
 
-    print("\nAll four matrices were recorded above.")
+    print("\nAll eight matrices were recorded above.")
 
     replay = input(
-        "Replay the two synchronized pairs now? Type YES to continue: "
+        "Replay the four synchronized pairs now? Type YES to continue: "
     ).strip()
 
     if replay != "YES":
